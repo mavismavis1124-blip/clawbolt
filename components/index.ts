@@ -1,0 +1,6 @@
+export { Header } from './Header'
+export { HeroSimple } from './HeroSimple'
+export { TheWidget } from './TheWidget'
+export { Comparison } from './Comparison'
+export { Marquee } from './Marquee'
+export { Footer } from './Footer'

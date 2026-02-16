@@ -1,0 +1,58 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Bot {
+  id            String          @id @default(cuid())
+  userId        String
+  name          String
+  username      String?
+  token         String
+  status        String          @default("PENDING")
+  model         String          @default("gpt")
+  channel       String          @default("telegram")
+  runtimeStatus String          @default("PENDING")
+  apiKey        String?
+  webhookUrl    String?
+  webhookSecret String?
+  containerName String?
+  containerId   String?
+  runtimePort   Int?
+  lastHeartbeatAt DateTime?
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  deployments   Deployment[]
+  jobs          DeploymentJob[]
+}
+
+model Deployment {
+  id        String   @id @default(cuid())
+  botId     String
+  status    String   @default("PENDING")
+  logs      String?
+  error     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  bot       Bot      @relation(fields: [botId], references: [id], onDelete: Cascade)
+}
+
+model DeploymentJob {
+  id         String   @id @default(cuid())
+  botId      String
+  type       String   @default("DEPLOY")
+  status     String   @default("QUEUED")
+  payload    String?
+  logs       String?
+  error      String?
+  attempt    Int      @default(0)
+  startedAt  DateTime?
+  finishedAt DateTime?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  bot        Bot      @relation(fields: [botId], references: [id], onDelete: Cascade)
+}

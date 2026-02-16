@@ -1,0 +1,104 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-sans: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-bg-void text-text-primary antialiased;
+    background-image:
+      radial-gradient(circle at 15% -10%, rgba(255, 30, 45, 0.18), transparent 32%),
+      radial-gradient(circle at 90% 15%, rgba(255, 68, 83, 0.12), transparent 26%),
+      linear-gradient(180deg, #050505 0%, #040404 45%, #030303 100%);
+    background-attachment: fixed;
+  }
+
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.08;
+    z-index: 0;
+    background-image:
+      radial-gradient(circle, rgba(255, 255, 255, 0.25) 0.5px, transparent 0.5px);
+    background-size: 3px 3px;
+    mix-blend-mode: soft-light;
+  }
+
+  body > * {
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Respect prefers-reduced-motion */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+@layer components {
+  .focus-ring {
+    @apply focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-void;
+  }
+}
+
+@keyframes gradient-pan {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+@keyframes text-shimmer {
+  0% {
+    background-position: 120% 0;
+  }
+  100% {
+    background-position: -20% 0;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .animated-gradient-text {
+    background-size: 180% 180%;
+    animation: gradient-pan 7s ease infinite;
+  }
+
+  .text-shimmer {
+    background-image: linear-gradient(
+      105deg,
+      rgba(245, 245, 245, 0.72) 25%,
+      rgba(255, 255, 255, 0.95) 40%,
+      rgba(245, 245, 245, 0.72) 55%
+    );
+    background-size: 200% 100%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    animation: text-shimmer 8s linear infinite;
+  }
+}
