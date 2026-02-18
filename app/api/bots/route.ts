@@ -54,7 +54,56 @@ export async function GET() {
       orderBy: { createdAt: 'desc' },
     })
 
-    return NextResponse.json({ bots: bots.map(toSafeBot) })
+    const botIds = bots.map((bot) => bot.id)
+
+    const groupedStatuses = botIds.length
+      ? await prisma.deployment.groupBy({
+          by: ['botId', 'status'],
+          where: { botId: { in: botIds } },
+          _count: { _all: true },
+        })
+      : []
+
+    const deploymentStatsByBot: Record<
+      string,
+      { total: number; success: number; failed: number; inProgress: number; pending: number }
+    > = {}
+
+    for (const botId of botIds) {
+      deploymentStatsByBot[botId] = {
+        total: 0,
+        success: 0,
+        failed: 0,
+        inProgress: 0,
+        pending: 0,
+      }
+    }
+
+    for (const row of groupedStatuses) {
+      const stats = deploymentStatsByBot[row.botId]
+      if (!stats) continue
+
+      const count = row._count?._all || 0
+      stats.total += count
+
+      if (row.status === 'SUCCESS') stats.success += count
+      else if (row.status === 'FAILED') stats.failed += count
+      else if (row.status === 'IN_PROGRESS') stats.inProgress += count
+      else if (row.status === 'PENDING') stats.pending += count
+    }
+
+    const safeBots = bots.map((bot) => ({
+      ...toSafeBot(bot),
+      deploymentStats: deploymentStatsByBot[bot.id] || {
+        total: 0,
+        success: 0,
+        failed: 0,
+        inProgress: 0,
+        pending: 0,
+      },
+    }))
+
+    return NextResponse.json({ bots: safeBots })
   } catch (error) {
     console.error('Error fetching bots:', error)
     return NextResponse.json(

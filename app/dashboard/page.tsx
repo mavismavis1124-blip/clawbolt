@@ -25,6 +25,14 @@ import {
 } from 'lucide-react'
 import { Header } from '@/components/Header'
 
+interface DeploymentStats {
+  total: number
+  success: number
+  failed: number
+  inProgress: number
+  pending: number
+}
+
 interface BotData {
   id: string
   userId: string
@@ -40,6 +48,7 @@ interface BotData {
   createdAt: string
   updatedAt: string
   deployments?: DeploymentData[]
+  deploymentStats?: DeploymentStats
 }
 
 interface DeploymentData {
@@ -506,6 +515,37 @@ export default function Dashboard() {
     }
   }
 
+  const formatRelativeDate = (iso?: string | null) => {
+    if (!iso) return '—'
+    const time = new Date(iso).getTime()
+    if (Number.isNaN(time)) return '—'
+
+    const diffMs = Date.now() - time
+    const mins = Math.floor(diffMs / 60000)
+    if (mins < 1) return 'just now'
+    if (mins < 60) return `${mins}m ago`
+    const hours = Math.floor(mins / 60)
+    if (hours < 24) return `${hours}h ago`
+    const days = Math.floor(hours / 24)
+    return `${days}d ago`
+  }
+
+  const formatUptime = (startedAt?: string | null) => {
+    if (!startedAt) return '—'
+    const start = new Date(startedAt).getTime()
+    if (Number.isNaN(start)) return '—'
+
+    const diffMs = Math.max(Date.now() - start, 0)
+    const mins = Math.floor(diffMs / 60000)
+    const days = Math.floor(mins / 1440)
+    const hours = Math.floor((mins % 1440) / 60)
+    const minutes = mins % 60
+
+    if (days > 0) return `${days}d ${hours}h`
+    if (hours > 0) return `${hours}h ${minutes}m`
+    return `${minutes}m`
+  }
+
   return (
     <div className="min-h-screen bg-bg-void">
       <Header />
@@ -953,6 +993,61 @@ export default function Dashboard() {
                             )}
                           </div>
                         )}
+
+                        {/* Bot Analytics */}
+                        <div className="mt-4 rounded-xl border border-border-subtle bg-bg-void p-4">
+                          <div className="mb-3 flex items-center justify-between">
+                            <div className="flex items-center space-x-2">
+                              <Activity className="w-4 h-4 text-text-tertiary" />
+                              <span className="text-sm text-text-secondary">Bot Analytics</span>
+                            </div>
+                            <span className="text-[11px] text-text-tertiary">
+                              Updated {formatRelativeDate(runtimeTelemetryByBot[bot.id]?.updatedAt || bot.updatedAt)}
+                            </span>
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                            <div className="rounded-lg border border-border-subtle bg-surface-hover px-3 py-2">
+                              <p className="text-[10px] uppercase tracking-wide text-text-tertiary">Deployments</p>
+                              <p className="text-base font-semibold text-text-primary">{bot.deploymentStats?.total ?? 0}</p>
+                            </div>
+                            <div className="rounded-lg border border-border-subtle bg-surface-hover px-3 py-2">
+                              <p className="text-[10px] uppercase tracking-wide text-text-tertiary">Success rate</p>
+                              <p className="text-base font-semibold text-green-400">
+                                {(() => {
+                                  const total = bot.deploymentStats?.total ?? 0
+                                  const success = bot.deploymentStats?.success ?? 0
+                                  return total > 0 ? `${Math.round((success / total) * 100)}%` : '—'
+                                })()}
+                              </p>
+                            </div>
+                            <div className="rounded-lg border border-border-subtle bg-surface-hover px-3 py-2">
+                              <p className="text-[10px] uppercase tracking-wide text-text-tertiary">Runtime uptime</p>
+                              <p className="text-base font-semibold text-text-primary">{formatUptime(runtimeTelemetryByBot[bot.id]?.startedAt)}</p>
+                            </div>
+                            <div className="rounded-lg border border-border-subtle bg-surface-hover px-3 py-2">
+                              <p className="text-[10px] uppercase tracking-wide text-text-tertiary">Last deployment</p>
+                              <p className="text-base font-semibold text-text-primary">
+                                {formatRelativeDate(bot.deployments?.[0]?.createdAt)}
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="mt-3 flex flex-wrap items-center gap-2 text-[11px] text-text-tertiary">
+                            <span className="rounded-md border border-border-subtle px-2 py-0.5">
+                              success: {bot.deploymentStats?.success ?? 0}
+                            </span>
+                            <span className="rounded-md border border-border-subtle px-2 py-0.5">
+                              failed: {bot.deploymentStats?.failed ?? 0}
+                            </span>
+                            <span className="rounded-md border border-border-subtle px-2 py-0.5">
+                              active jobs: {(bot.deploymentStats?.inProgress ?? 0) + (bot.deploymentStats?.pending ?? 0)}
+                            </span>
+                            <span className="rounded-md border border-border-subtle px-2 py-0.5">
+                              runtime: {runtimeTelemetryByBot[bot.id]?.containerStatus || bot.runtimeStatus || 'unknown'}
+                            </span>
+                          </div>
+                        </div>
 
                         {/* Live Runtime Stream */}
                         <div className="mt-4">
